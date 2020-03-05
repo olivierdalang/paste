@@ -148,12 +148,11 @@ class DataApp(object):
         if range and 'bytes' == range[0] and 1 == len(range[1]):
             (lower, upper) = range[1][0]
             upper = upper or (self.content_length - 1)
-            if upper >= self.content_length or lower > upper:
-                return HTTPRequestRangeNotSatisfiable((
-                  "Range request was made beyond the end of the content,\r\n"
-                  "which is %s long.\r\n  Range: %s\r\n") % (
-                     self.content_length, RANGE(environ))
-                ).wsgi_application(environ, start_response)
+            # clamp the range if needed
+            if upper >= self.content_length:
+                upper = self.content_length - 1
+            if lower > upper:
+                lower = upper
 
         content_length = upper - lower + 1
         CONTENT_RANGE.update(headers, first_byte=lower, last_byte=upper,
